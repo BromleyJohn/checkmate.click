@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>checkmate.click</title>
+  </head>
+
+  <body>
+    <h1>checkmate.click</h1>
+
+  <!------------------------------------------------------------------------->
+
+    <div id="div_login">
+
+      <h2>div_login</h2>
+      username:<br>
+      <input type="text" id="txt_super_user" name="txt_super_user"><br>
+
+      password:<br>
+      <input type="password" id="txt_super_pass"><p>
+
+      <button id="btn_login">Log In</button>
+
+      <p id="login_error_message"></p>
+
+    </div>
+
+  <!------------------------------------------------------------------------->
+
+    <div id="div_user_list">
+
+      <h2>div_user_list</h2>
+
+      <button id="btn_create_new_user">Create new user</button>
+
+      <button id="btn_log_out">Log out</button>
+
+      <p id = 'lst_Users'> </p>
+
+    </div>
+
+<!------------------------------------------------------------------------->
+
+    <div id="div_single_user">
+
+      <h2>div_single_user</h2>
+
+      username:<br>
+      <input type="text" id="txt_username" name="txt_username"><br>
+
+      password:<br>
+      <input type="password" id="txt_password"><p>
+
+      <input type="radio" id="rad_view" name="role" value="view">View only<br>
+      <input type="radio" id="rad_admin" name="role" value="admin">System administrator<p>
+
+      <select id="sel_service"></select><p>
+
+      <button id="btn_update_user">Save</button>
+
+      <button id="btn_cancel_update">Close</button>
+
+      <p id="user_error_message"></p>
+
+    </div>
+
+  <!------------------------------------------------------------------------->
+
+
+  <script>
+
+    var users = [];
+
+    btn_cancel_update.addEventListener('click', function(e) {
+        //in the single user div but chooses to cancel
+      showDiv('div_user_list');
+    });
+
+    btn_update_user.addEventListener('click', function(e) {
+      //--------------------------------
+      //To actually check & update data
+      //--------------------------------
+      var _user = document.getElementById ('txt_username').value;
+      var _pass = document.getElementById ('txt_password').value;
+
+      var _role = '';
+      if (document.getElementById('rad_view').checked) {
+        _role = document.getElementById('rad_view').value;
+      }
+      if (document.getElementById('rad_admin').checked) {
+        _role = document.getElementById('rad_admin').value;
+      }
+
+      var  e = document.getElementById ('sel_service');
+      var  _service = e.options [e.selectedIndex] .text;
+      //console.log(_service);
+
+      if (checkUserOK(_user,_pass,_role,_service)){
+        //put the new user into the user array
+        users.push({"user":_user,"pass":_pass,"role":_role,"service":_service});
+        showInfo();
+        showDiv('div_user_list'); //logged_in = 'YES' so show user list
+      }
+
+      function checkUserOK(user,pass,role,service){
+        document.getElementById("user_error_message").innerHTML = '';//clear in case previous
+        console.log(_user);
+        var bool = true;
+        var message = '';
+
+        if (user == ''){
+          message = "User name required.<br/>";
+          bool = false;
+        }
+
+        if (pass == ''){
+          message = message + "Password required.<br/>";
+          bool = false;
+        }
+
+        if (role == ''){
+          message = message + "User role must be selected.<br/>";
+          bool = false;
+        }
+
+        if (service == '-- Select service --'){
+          message = message + "A Service Area must be selected.";
+          bool = false;
+        }
+
+        if (bool == false){
+          document.getElementById("user_error_message").innerHTML = message;
+        }
+        console.log(role);
+        return bool
+       }
+    });
+
+    //-------------------------------------------------------------------------------------
+
+    btn_create_new_user.addEventListener('click', function(e) {
+      //--------------------------------------------
+      // To show the single user screen
+      //--------------------------------------------
+
+      showDiv('div_single_user');//show div for single username
+
+      //clear any data from any previous update
+      document.getElementById('txt_username').value = '';
+      document.getElementById('txt_password').value = '';
+      document.getElementById('rad_view').checked = false;
+      document.getElementById('rad_admin').checked = false;
+      var _select = document.getElementById('sel_service');
+
+      //need to rebuild select because only way found to reset
+      //top to show 'select service area'
+      for (var i = 0; i < arr_service.length; i++) {
+        _sel.options[i] = new Option(arr_service[i]);
+      }
+      _sel.options[0].disabled = true
+
+      document.getElementsByName('txt_username')[0].focus(); //place cursor in 1st field
+    });
+
+   //-------------------------------------------------------------------------------------
+
+    btn_login.addEventListener('click', function(e) {
+      var super_user = document.getElementById('txt_super_user').value;
+      var super_pass = document.getElementById('txt_super_pass').value;
+      if (super_user == 'jah' && super_pass == '123') {
+        //admin credentials ok;
+        localStorage.setItem('ls_logged_in','YES');
+        showDiv('div_user_list');
+      } else {
+        document.getElementById("login_error_message").innerHTML = 'Login error - Please try again.';
+      }
+    });
+
+    //-------------------------------------------------------------------------------------
+
+    btn_log_out.addEventListener('click', function(e) {
+      localStorage.setItem('ls_logged_in',null);
+      //clear the fields in the login div
+      document.getElementById('txt_super_user').value = '';
+      document.getElementById('txt_super_pass').value = '';
+      document.getElementById("login_error_message").innerHTML = '';
+      document.getElementsByName('txt_username')[0].focus(); //place cursor in 1st field
+      showDiv('div_login'); //leave with log in div in case user wants to log back in
+    });
+
+    //-------------------------------------------------------------------------------------
+
+    //function to display the required div of three & hide the other two.
+    function showDiv(div_name) {
+      //hide all divs first
+      document.getElementById('div_user_list').style.display = 'none';
+      document.getElementById('div_single_user').style.display = 'none';
+      document.getElementById('div_login').style.display = 'none';
+      //show required div
+      document.getElementById(div_name).style.display = 'block';
+    }
+
+    //-------------------------------------------------------------------------------------
+
+
+    function showInfo() {
+        //document.getElementById('addBand').style.display= "none"; //hide the addBand div
+        //toggleScreen("block","none"); //show the band list
+        //sortDocs('lastName'); //sort the list by musicians last name
+        var ul = document.getElementById('lst_Users'); //fill the musicians 'list'
+        ul.innerHTML = users.map(function (item) {
+            return '<li>' + item.service + ' - ' + item.user + ' - ' + item.role + '</li>'
+        }).join('');
+    }
+
+    //runs each time page refreshed. The if statement is so that the login div
+    //is only displayed the first time the user hits the page. Subsequent refresh
+    //buttons will show the user list (it is not expected that the user will be
+    //hitting the refresh button as a matter of course but must cater for the possibility)
+
+    logged_in = localStorage.getItem('ls_logged_in'); //will be null 1st time page loaded
+    if (logged_in == 'null' || logged_in == null) {
+      showDiv('div_login');
+      document.getElementsByName('txt_super_user')[0].focus(); //place cursor in 1st field
+    } else {
+
+    var _sel = document.getElementById('sel_service');
+
+    var arr_service = [
+      ' -- Select service -- ',
+      'Bereavement Services',
+      'Cleansing',
+      'Commercial & Customer Service',
+      'Fleet Services',
+      'Green Services',
+      'Passenger Services',
+      'Waste Management',
+      'Service Group Management'
+    ];
+
+    //buildServiceDropdown();
+    showDiv('div_user_list'); //logged_in = 'YES' so show user list
+
+  }
+  </script>
+
+
+</body>
+</html>
