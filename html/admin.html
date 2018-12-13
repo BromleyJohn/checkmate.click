@@ -70,6 +70,7 @@
   <script>
 
     var users = [];
+    var arr_service = [];
 
     btn_cancel_update.addEventListener('click', function(e) {
         //in the single user div but chooses to cancel
@@ -93,7 +94,6 @@
 
       var  e = document.getElementById ('sel_service');
       var  _service = e.options [e.selectedIndex] .text;
-      //console.log(_service);
 
       if (checkUserOK(_user,_pass,_role,_service)){
         //put the new user into the user array
@@ -104,7 +104,6 @@
 
       function checkUserOK(user,pass,role,service){
         document.getElementById("user_error_message").innerHTML = '';//clear in case previous
-        console.log(_user);
         var bool = true;
         var message = '';
 
@@ -131,7 +130,6 @@
         if (bool == false){
           document.getElementById("user_error_message").innerHTML = message;
         }
-        console.log(role);
         return bool
        }
     });
@@ -150,16 +148,37 @@
       document.getElementById('txt_password').value = '';
       document.getElementById('rad_view').checked = false;
       document.getElementById('rad_admin').checked = false;
-      var _select = document.getElementById('sel_service');
 
-      //need to rebuild select because only way found to reset
-      //top to show 'select service area'
-      for (var i = 0; i < arr_service.length; i++) {
-        _sel.options[i] = new Option(arr_service[i]);
+      //place cursor in 1st field
+      document.getElementsByName('txt_username')[0].focus();
+
+      //----------------------------------------------------------------
+      //need to rebuild select each time because only way found to reset
+      //top to show 'select service area'. (Hopefully a better more
+      //concise way will be found in  the future)
+      //----------------------------------------------------------------
+
+      var _sel = document.getElementById('sel_service');
+
+      //need to remove previous select items otherwise
+      //will just add a further set to bottom
+      var i;
+      for(i = _sel.options.length - 1 ; i >= 0 ; i--)
+      {
+        _sel.remove(i);
       }
-      _sel.options[0].disabled = true
 
-      document.getElementsByName('txt_username')[0].focus(); //place cursor in 1st field
+      //this is a good way to build a dropdown with only one paint
+      // of the screen needed
+      _fragment = document.createDocumentFragment();
+
+      arr_service.forEach(function(_item) {
+         var _opt = document.createElement('option');
+         _opt.innerHTML = _item;
+         _fragment.appendChild(_opt);
+      });
+      _sel.appendChild(_fragment);
+
     });
 
    //-------------------------------------------------------------------------------------
@@ -204,8 +223,6 @@
 
 
     function showInfo() {
-        //document.getElementById('addBand').style.display= "none"; //hide the addBand div
-        //toggleScreen("block","none"); //show the band list
         //sortDocs('lastName'); //sort the list by musicians last name
         var ul = document.getElementById('lst_Users'); //fill the musicians 'list'
         ul.innerHTML = users.map(function (item) {
@@ -213,10 +230,12 @@
         }).join('');
     }
 
+
     //runs each time page refreshed. The if statement is so that the login div
     //is only displayed the first time the user hits the page. Subsequent refresh
     //buttons will show the user list (it is not expected that the user will be
     //hitting the refresh button as a matter of course but must cater for the possibility)
+    //(function() {
 
     logged_in = localStorage.getItem('ls_logged_in'); //will be null 1st time page loaded
     if (logged_in == 'null' || logged_in == null) {
@@ -224,9 +243,8 @@
       document.getElementsByName('txt_super_user')[0].focus(); //place cursor in 1st field
     } else {
 
-    var _sel = document.getElementById('sel_service');
 
-    var arr_service = [
+    arr_service = [
       ' -- Select service -- ',
       'Bereavement Services',
       'Cleansing',
@@ -238,10 +256,11 @@
       'Service Group Management'
     ];
 
-    //buildServiceDropdown();
     showDiv('div_user_list'); //logged_in = 'YES' so show user list
 
   }
+
+  //})();
   </script>
 
 
