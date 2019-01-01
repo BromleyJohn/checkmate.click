@@ -49,7 +49,7 @@
       <input type="text" id="txt_username" name="txt_username"><br>
 
       password:<br>
-      <input type="password" id="txt_password"><p>
+      <input type="text" id="txt_password"><p>
 
       <input type="radio" id="rad_view" name="role" value="view">View only<br>
       <input type="radio" id="rad_admin" name="role" value="admin">System administrator<p>
@@ -58,7 +58,9 @@
 
       <button id="btn_update_user">Save</button>
 
-      <button id="btn_cancel_update">Close</button>
+      <button id="btn_cancel_update">Cancel</button>
+
+      <p><button id="btn_delete_user">Delete</button></p>
 
       <p id="user_error_message"></p>
 
@@ -69,13 +71,78 @@
 
   <script>
 
-    var users = [];
+    //set up the variables
     var arr_service = [];
+    var arr_users = [];
+    var _id = '';
+    var _index = '';
 
     btn_cancel_update.addEventListener('click', function(e) {
-        //in the single user div but chooses to cancel
+      //---------------------------------------------------
+      //user choosesto cancel while in the single user div
+      //so revert to showing the user list
+      //---------------------------------------------------
+      _id = '';
       showDiv('div_user_list');
     });
+
+    //_________________________________________________________________________
+
+    btn_create_new_user.addEventListener('click', function(e) {
+      //------------------------------------------------------------------------
+      //an empty div_single_user will be displayed to allow creation of new user
+      //a temporary id 'NEW' is created because the create new button clicked
+      //this will be replaced with proper id if user is saved.
+      //------------------------------------------------------------------------
+      _id = 'NEW';
+      //console.log('btn_create_new_user: ' + _id)
+      showUser(_id);
+    });
+
+    //_________________________________________________________________________
+
+    btn_delete_user.addEventListener('click', function(e) {
+      //---------------------------------------------------
+      //Want to delete user while in div_single_user
+      //---------------------------------------------------
+      console.log('btn_delete_user: ' + arr_users[_index]._id);
+      if (confirm('Delete user ' + arr_users[_index].user + '?')) {
+        arr_users.splice(_index, 1); //this does the actaul delete
+        showInfo(); //redraw the user list otherwise deleted still shows
+      }
+      showDiv('div_user_list');
+    });
+
+    //_________________________________________________________________________
+
+    btn_login.addEventListener('click', function(e) {
+      //-------------------------------------
+      //initial one time login for super user
+      //-------------------------------------
+      var super_user = document.getElementById('txt_super_user').value;
+      var super_pass = document.getElementById('txt_super_pass').value;
+      if (super_user == 'jah' && super_pass == '123') {
+        //admin credentials ok;
+        localStorage.setItem('ls_logged_in','YES');
+        showDiv('div_user_list');
+      } else {
+        document.getElementById("login_error_message").innerHTML = 'Login error - Please try again.';
+      }
+    });
+
+    //______________________________________________________________________
+
+    btn_log_out.addEventListener('click', function(e) {
+      localStorage.setItem('ls_logged_in',null);
+      //clear the fields in the login div
+      document.getElementById('txt_super_user').value = '';
+      document.getElementById('txt_super_pass').value = '';
+      document.getElementById("login_error_message").innerHTML = '';
+      document.getElementsByName('txt_username')[0].focus(); //place cursor in 1st field
+      showDiv('div_login'); //leave with log in div in case user wants to log back in
+    });
+
+    //__________________________________________________________________________
 
     btn_update_user.addEventListener('click', function(e) {
       //--------------------------------
@@ -84,23 +151,36 @@
       var _user = document.getElementById ('txt_username').value;
       var _pass = document.getElementById ('txt_password').value;
 
-      var _role = '';
+      var _role = ''; //set up role variable dependent on radio button selected
       if (document.getElementById('rad_view').checked) {
         _role = document.getElementById('rad_view').value;
-      }
-      if (document.getElementById('rad_admin').checked) {
+      } else {
         _role = document.getElementById('rad_admin').value;
       }
 
-      var  e = document.getElementById ('sel_service');
-      var  _service = e.options [e.selectedIndex] .text;
+      //get the selected service from the service dropdown
+      var  _element = document.getElementById ('sel_service');
+      var  _service = _element.options [_element.selectedIndex] .text;
 
+
+      //if the user passes all the required checks then update
       if (checkUserOK(_user,_pass,_role,_service)){
         //put the new user into the user array
-        users.push({"user":_user,"pass":_pass,"role":_role,"service":_service});
+        if (_id == 'NEW'){
+          arr_users.push({"user":_user,"pass":_pass,"role":_role,"service":_service,_id: new Date().toISOString()});
+          _id = ''; //clear the _id variable of 'NEW'
+        } else {
+          //update an existing user
+          arr_users[_index].user = _user;
+          arr_users[_index].pass = _pass;
+          arr_users[_index].role = _role;
+          arr_users[_index].service = _service;
+        }
         showInfo();
-        showDiv('div_user_list'); //logged_in = 'YES' so show user list
+        showDiv('div_user_list');
       }
+
+      //_____________________________________________________________________
 
       function checkUserOK(user,pass,role,service){
         document.getElementById("user_error_message").innerHTML = '';//clear in case previous
@@ -134,9 +214,47 @@
        }
     });
 
-    //-------------------------------------------------------------------------------------
+    //____________________________________________________________________
 
-    btn_create_new_user.addEventListener('click', function(e) {
+
+    function showDiv(div_name) {
+    //--------------------------------------------------------------------
+    //function to display the required div of three & hide the other two.
+    //--------------------------------------------------------------------
+
+      //hide all divs first
+      document.getElementById('div_user_list').style.display = 'none';
+      document.getElementById('div_single_user').style.display = 'none';
+      document.getElementById('div_login').style.display = 'none';
+      //show required div
+      document.getElementById(div_name).style.display = 'block';
+    }
+
+    //______________________________________________________________________
+
+
+    function showInfo() {
+        //-------------------
+        //build the user list
+        //-------------------
+        //sortDocs('lastName'); //sort the list by musicians last name
+        var ul = document.getElementById('lst_Users'); //fill the user 'list'
+
+        ul.innerHTML = arr_users.map(function (user) {
+
+          //build the link
+          _link = '<a href="javascript:showUser(\''+user._id+'\')">';
+          _link = _link  + user.user;
+          _link = _link  + '</a>';
+
+            return '<li>' + _link + ' - ' + user.service + ' - ' + user.role + '</li>'
+        }).join('');
+    }
+
+    //______________________________________________________________________
+
+    function showUser(_id){
+
       //--------------------------------------------
       // To show the single user screen
       //--------------------------------------------
@@ -149,8 +267,85 @@
       document.getElementById('rad_view').checked = false;
       document.getElementById('rad_admin').checked = false;
 
-      //place cursor in 1st field
-      document.getElementsByName('txt_username')[0].focus();
+      //hide the delete button as would not want to delete while creating!
+      document.getElementById('btn_delete_user').style.display = 'none';
+
+      document.getElementsByName('txt_username')[0].focus();//place cursor in 1st field
+
+      _sel.options[0].selected=true;
+
+
+      if (_id !== 'NEW') {
+
+        //------------------------------------------------------------------
+        //user <> 'NEW', already exists so fill required textboxes with their info.
+        //------------------------------------------------------------------
+
+        //show the delete button in case deletion required
+        document.getElementById('btn_delete_user').style.display = 'block'; //or
+
+
+        //need to position on required index in user array
+        _index = arr_users.findIndex(findUser); //uses the local findUser function below
+
+        document.getElementById('txt_username').value = arr_users[_index].user;
+        document.getElementById('txt_password').value = arr_users[_index].pass;
+
+        //set up the radio buttons to reflect user role
+        if (arr_users[_index].role === 'view') {
+          document.getElementById('rad_view').checked = true;
+        } else {
+          document.getElementById('rad_admin').checked = true;
+        }
+
+        //put the users existing service at the top of the service dropdown
+        var _serviceIndex = arr_service.findIndex(findService); //uses the local findUser function below
+        _sel.options[_serviceIndex].selected=true;
+
+        function findUser(user){
+          return user._id === _id;
+        }
+
+        function findService(service){
+          //find the service index in service array using the service name
+          return service === arr_users[_index].service;
+        }
+
+      }
+
+      //console.log('function showUser: ' + _id);
+
+    }
+
+    /*____________________________________________________________________________________
+    runs each time page refreshed. The if statement is so that the login div
+    is only displayed the first time the user hits the page. Subsequent refresh
+    buttons will show the user list (it is not expected that the user will be
+    hitting the refresh button as a matter of course but must cater for the possibility)
+    ______________________________________________________________________________________*/
+    //(function() {
+
+    logged_in = localStorage.getItem('ls_logged_in'); //will be null 1st time page loaded
+    if (logged_in == 'null' || logged_in == null) {
+
+      //show the login option
+      showDiv('div_login');
+      document.getElementsByName('txt_super_user')[0].focus(); //place cursor in 1st field
+
+    } else {
+
+
+      arr_service = [
+      ' -- Select service -- ',
+      'Bereavement Services',
+      'Cleansing',
+      'Commercial & Customer Service',
+      'Fleet Services',
+      'Green Services',
+      'Passenger Services',
+      'Waste Management',
+      'Service Group Management'
+      ];
 
       //----------------------------------------------------------------
       //need to rebuild select each time because only way found to reset
@@ -161,12 +356,12 @@
       var _sel = document.getElementById('sel_service');
 
       //need to remove previous select items otherwise
-      //will just add a further set to bottom
-      var i;
-      for(i = _sel.options.length - 1 ; i >= 0 ; i--)
-      {
-        _sel.remove(i);
-      }
+      //will just add a further complete set to bottom
+      //var i;
+      //for(i = _sel.options.length - 1 ; i >= 0 ; i--)
+      //{
+      //  _sel.remove(i);
+      //}
 
       //this is a good way to build a dropdown with only one paint
       // of the screen needed
@@ -179,86 +374,9 @@
       });
       _sel.appendChild(_fragment);
 
-    });
 
-   //-------------------------------------------------------------------------------------
-
-    btn_login.addEventListener('click', function(e) {
-      var super_user = document.getElementById('txt_super_user').value;
-      var super_pass = document.getElementById('txt_super_pass').value;
-      if (super_user == 'jah' && super_pass == '123') {
-        //admin credentials ok;
-        localStorage.setItem('ls_logged_in','YES');
-        showDiv('div_user_list');
-      } else {
-        document.getElementById("login_error_message").innerHTML = 'Login error - Please try again.';
-      }
-    });
-
-    //-------------------------------------------------------------------------------------
-
-    btn_log_out.addEventListener('click', function(e) {
-      localStorage.setItem('ls_logged_in',null);
-      //clear the fields in the login div
-      document.getElementById('txt_super_user').value = '';
-      document.getElementById('txt_super_pass').value = '';
-      document.getElementById("login_error_message").innerHTML = '';
-      document.getElementsByName('txt_username')[0].focus(); //place cursor in 1st field
-      showDiv('div_login'); //leave with log in div in case user wants to log back in
-    });
-
-    //-------------------------------------------------------------------------------------
-
-    //function to display the required div of three & hide the other two.
-    function showDiv(div_name) {
-      //hide all divs first
-      document.getElementById('div_user_list').style.display = 'none';
-      document.getElementById('div_single_user').style.display = 'none';
-      document.getElementById('div_login').style.display = 'none';
-      //show required div
-      document.getElementById(div_name).style.display = 'block';
+      showDiv('div_user_list'); //logged_in = 'YES' so show user list
     }
-
-    //-------------------------------------------------------------------------------------
-
-
-    function showInfo() {
-        //sortDocs('lastName'); //sort the list by musicians last name
-        var ul = document.getElementById('lst_Users'); //fill the musicians 'list'
-        ul.innerHTML = users.map(function (item) {
-            return '<li>' + item.service + ' - ' + item.user + ' - ' + item.role + '</li>'
-        }).join('');
-    }
-
-
-    //runs each time page refreshed. The if statement is so that the login div
-    //is only displayed the first time the user hits the page. Subsequent refresh
-    //buttons will show the user list (it is not expected that the user will be
-    //hitting the refresh button as a matter of course but must cater for the possibility)
-    //(function() {
-
-    logged_in = localStorage.getItem('ls_logged_in'); //will be null 1st time page loaded
-    if (logged_in == 'null' || logged_in == null) {
-      showDiv('div_login');
-      document.getElementsByName('txt_super_user')[0].focus(); //place cursor in 1st field
-    } else {
-
-
-    arr_service = [
-      ' -- Select service -- ',
-      'Bereavement Services',
-      'Cleansing',
-      'Commercial & Customer Service',
-      'Fleet Services',
-      'Green Services',
-      'Passenger Services',
-      'Waste Management',
-      'Service Group Management'
-    ];
-
-    showDiv('div_user_list'); //logged_in = 'YES' so show user list
-
-  }
 
   //})();
   </script>
